@@ -3,7 +3,7 @@ import streamlit as st
 # ページ設定
 st.set_page_config(page_title="支援記録生成くん", layout="centered")
 
-st.title("📝 支援記録 一発生成くん")
+st.title("支援記録 一発生成くん")
 st.caption("就労支援の現場で使える、自然な文章を生成します。")
 
 # --- データの定義（辞書型で正しい日本語を登録） ---
