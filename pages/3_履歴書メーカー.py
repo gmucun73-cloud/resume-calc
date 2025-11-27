@@ -2,235 +2,310 @@ import streamlit as st
 from datetime import date
 import time
 
-# --- 6.1 シニア・アクセシビリティ対応（CSS注入） ---
-# 文字サイズ、ボタンの大きさ、配色のコントラスト比を調整
+# ==========================================
+# 0. シニア・アクセシビリティ設定 (UI/UX)
+# ==========================================
+st.set_page_config(page_title="福祉職の履歴書メーカー 完全版", layout="centered")
+
+# 要件定義 6.1: フォントサイズ16px以上、コントラスト確保、ボタンサイズ拡大
 st.markdown("""
     <style>
-    /* 全体の文字サイズを拡大 (18px) */
+    /* ベースの文字サイズ拡大 */
     html, body, [class*="css"] {
         font-family: "Hiragino Sans", "Meiryo", sans-serif;
         font-size: 18px !important;
         line-height: 1.8 !important;
         color: #333333;
     }
-    /* ボタンを指で押しやすく巨大化 (高さ50px以上) */
+    /* ボタンを指で押しやすく巨大化 (44px以上確保) */
     .stButton > button {
         width: 100%;
         height: 60px;
         font-size: 20px !important;
         font-weight: bold;
-        background-color: #E8F5E9; /* 目に優しい薄緑 */
+        background-color: #E8F5E9;
         border: 2px solid #2E7D32;
         color: #2E7D32;
         border-radius: 10px;
+        margin-top: 10px;
+        margin-bottom: 10px;
     }
     .stButton > button:hover {
         background-color: #2E7D32;
         color: white;
     }
-    /* 入力エリアの強調 */
-    .stTextInput > div > div > input {
-        font-size: 18px;
-        padding: 15px;
-    }
     /* 見出しのデザイン */
     h1, h2, h3 {
-        color: #2E7D32 !important; /* 濃い緑で視認性確保 */
+        color: #2E7D32 !important;
+    }
+    /* 進行バーの色 */
+    .stProgress > div > div > div > div {
+        background-color: #2E7D32;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# ページ設定
-st.title("かんたん履歴書メーカー")
-st.markdown("**文字を打つ必要はありません。ボタンを選ぶだけで、立派な書類が完成します。**")
+st.title("📄 福祉職のための履歴書作成")
+st.markdown("**質問に答えるだけで、プロ品質の「志望動機」と「職務経歴書」が完成します。**")
 
-# --- セッション管理（画面遷移してもデータを保持） ---
+# セッション管理（ステップ進行）
 if "step" not in st.session_state:
     st.session_state.step = 1
-if "resume_data" not in st.session_state:
-    st.session_state.resume_data = {}
+if "data" not in st.session_state:
+    st.session_state.data = {}
 
-# --- 進捗バー（4.2 認知的負荷軽減） ---
-progress = (st.session_state.step / 3) * 100
+# 進捗バー (要件定義 6.2: 認知的負荷軽減)
+progress = (st.session_state.step / 4) * 100
 st.progress(int(progress))
-st.caption(f"ステップ {st.session_state.step} / 3")
+st.caption(f"ステップ {st.session_state.step} / 4")
 
 # ==========================================
-# STEP 1: 基本情報と状況確認
+# STEP 1: きっかけ・背景 (Component A)
 # ==========================================
 if st.session_state.step == 1:
-    st.header("1. あなたの状況を教えてください")
-    
-    # 5.1 コンポーネントA：きっかけ・背景
-    trigger = st.radio("介護・福祉の仕事をしようと思った理由は？", [
-        "A-1. 家族の介護経験があり、役に立ちたいと思った",
-        "A-2. 以前のボランティアで「ありがとう」と言われて嬉しかった",
-        "A-3. 接客業の経験を活かして、人と深く関わる仕事がしたい",
-        "A-4. 手に職をつけて、長く安定して働きたい",
-        "A-5. ブランクがあるが、やっぱり介護の仕事が好きで戻りたい"
-    ])
-    
-    # 4.2 施設形態
-    facility = st.selectbox("働きたい、または経験のある場所は？", [
-        "特別養護老人ホーム（特養）",
-        "老人保健施設（老健）",
-        "デイサービス（通所介護）",
-        "訪問介護（ホームヘルプ）",
-        "グループホーム",
-        "障害者支援施設（就労支援など）"
-    ])
+    st.header("1. 介護・福祉を目指したきっかけ")
+    st.write("あなたの状況に最も近いものを選んでください")
 
-    # 4.1 資格（略称→正式名称変換用）
-    qualifications = st.multiselect("持っている資格（複数選べます）", [
-        "なし",
-        "ヘルパー2級・初任者研修",
-        "実務者研修・ヘルパー1級",
-        "介護福祉士",
-        "社会福祉士",
-        "精神保健福祉士",
-        "普通自動車免許（AT限定可）"
+    # 要件定義 5.1: コンポーネントAの選択肢
+    trigger_options = {
+        "未経験・異業種": [
+            "A-1. 家族の介護を経験し、専門技術を身につけて役に立ちたいと思った",
+            "A-2. ボランティアで利用者様の笑顔と「ありがとう」にやりがいを感じた",
+            "A-3. 接客業の経験を活かし、一人ひとりと深く関わる仕事がしたい",
+            "A-4. 高齢化社会を支える仕事で、手に職をつけて安定して働きたい",
+            "A-5. AIにはできない、人と人との触れ合いこそが価値を生む仕事がしたい"
+        ],
+        "経験者・キャリアアップ": [
+            "A-6. 訪問介護の経験から、在宅生活を支える重要性を学んだ",
+            "A-7. 認知症ケア等のより専門的なスキルを貴施設で磨きたい",
+            "A-8. リーダー経験を活かし、マネジメントや人材育成に携わりたい",
+            "A-9. 「自立支援」という貴法人の理念に深く共感した"
+        ],
+        "ブランク・復職": [
+            "A-10. 子育てが一段落し、大好きな介護の仕事に復帰したい",
+            "A-11. 親の介護経験を経て、以前より利用者に寄り添えると考えた",
+            "A-12. ブランクはあるが、最新の知識を学び直し戦力になりたい"
+        ]
+    }
+
+    # カテゴリ選択でフィルタリング
+    trigger_cat = st.radio("現在の状況は？", list(trigger_options.keys()))
+    selected_trigger = st.selectbox("具体的な理由は？", trigger_options[trigger_cat])
+
+    # 資格入力（要件定義 4.1: 正式名称マッピング用）
+    st.markdown("---")
+    st.subheader("保有資格")
+    qualifications = st.multiselect("お持ちの資格を選んでください（略称でOK）", [
+        "なし", "ヘルパー2級", "初任者研修", "ヘルパー1級", "実務者研修",
+        "介護福祉士", "社会福祉士", "精神保健福祉士", "ケアマネ",
+        "普通免許(AT)", "認知症ケア専門士", "喀痰吸引研修"
     ])
 
     if st.button("次へ進む（強みを選ぶ）"):
-        st.session_state.resume_data["trigger"] = trigger
-        st.session_state.resume_data["facility"] = facility
-        st.session_state.resume_data["qualifications"] = qualifications
+        st.session_state.data["trigger"] = selected_trigger
+        st.session_state.data["qualifications"] = qualifications
         st.session_state.step = 2
         st.rerun()
 
 # ==========================================
-# STEP 2: 強みと業務経験（5.2 & 5.4）
+# STEP 2: 性格・ソフトスキル (Component B-1)
 # ==========================================
 elif st.session_state.step == 2:
-    st.header("2. あなたの得意なこと")
-    
-    # 5.2 コンポーネントB：性格・強み
-    strength = st.selectbox("自分の性格に近いものは？", [
-        "B-1. 傾聴力（じっくり話を聞くのが得意）",
-        "B-2. 協調性（チームワークを大切にする）",
-        "B-3. 明るさ（職場のムードメーカーになれる）",
-        "B-4. 忍耐力（粘り強く対応できる）",
-        "B-5. 責任感（任された仕事は最後までやり遂げる）"
-    ])
-    
-    # 5.4 具体的タスク（チェックボックス）
-    st.subheader("できること・経験したこと（チェックしてください）")
-    col1, col2 = st.columns(2)
-    with col1:
-        task_physical = st.checkbox("入浴・排泄・食事の介助")
-        task_night = st.checkbox("夜勤・見守り")
-        task_dementia = st.checkbox("認知症の方の対応")
-    with col2:
-        task_rec = st.checkbox("レクリエーション企画")
-        task_record = st.checkbox("記録・パソコン入力")
-        task_drive = st.checkbox("送迎・運転")
+    st.header("2. あなたの性格・強み")
+    st.write("アピールしたい長所を選んでください")
 
-    if st.button("次へ進む（文章を作成）"):
-        st.session_state.resume_data["strength"] = strength
-        st.session_state.resume_data["tasks"] = {
-            "physical": task_physical,
-            "night": task_night,
-            "dementia": task_dementia,
-            "rec": task_rec,
-            "record": task_record,
-            "drive": task_drive
-        }
+    # 要件定義 5.2: コンポーネントB-1
+    strength_options = {
+        "傾聴力": "B-1. 言葉にならない思いや表情の変化を汲み取る「傾聴力」",
+        "協調性": "B-2. チームケアを重視し、報告・連絡・相談を徹底する「協調性」",
+        "忍耐力": "B-3. 認知症の方などにも粘り強く受容的に関わる「忍耐力」",
+        "明るさ": "B-4. 挨拶や声掛けで職場を明るくする「ムードメーカー」",
+        "責任感": "B-5. 事故防止や体調変化に気づき、任された業務を全うする「責任感」",
+        "向上心": "B-6. 新しい技術や知識を積極的に学ぶ「向上心」"
+    }
+    
+    selected_strength_key = st.radio("一番自信があるのは？", list(strength_options.keys()))
+    
+    # 貢献・目標 (Component C) もここで聞く
+    st.markdown("---")
+    st.subheader("入社後の目標")
+    goal_options = [
+        "C-1. 即戦力として、利用者様の顔と名前を早く覚えたい",
+        "C-2. 体力を活かし、夜勤や変則勤務にも柔軟に対応したい",
+        "C-3. 資格取得を目指し、将来的にはリーダーとして貢献したい",
+        "C-4. 利用者様にとって「会うと元気になる」存在になりたい",
+        "C-5. 業務改善や効率化にも取り組み、働きやすい環境を作りたい"
+    ]
+    selected_goal = st.selectbox("目指す姿は？", goal_options)
+
+    if st.button("次へ進む（業務経験チェック）"):
+        st.session_state.data["strength_desc"] = strength_options[selected_strength_key]
+        st.session_state.data["goal"] = selected_goal
         st.session_state.step = 3
         st.rerun()
 
 # ==========================================
-# STEP 3: 生成と確認（5.3 & 出力）
+# STEP 3: 具体的業務タスク (Component B-2)
 # ==========================================
 elif st.session_state.step == 3:
-    st.header("3. 文章ができました！")
-    
-    # --- ロジック実装（マトリクス生成） ---
-    data = st.session_state.resume_data
-    
-    # 志望動機生成
-    motivation = "【志望動機】\n"
-    
-    # Aパーツ（きっかけ）の変換
-    if "家族の介護" in data["trigger"]:
-        motivation += "家族の介護を経験し、専門的な知識と技術を身につけて社会の役に立ちたいと強く思い、志望いたしました。"
-    elif "ボランティア" in data["trigger"]:
-        motivation += "以前ボランティア活動に参加した際、利用者様の笑顔に深いやりがいを感じ、これを仕事にしたいと考えました。"
-    elif "接客業" in data["trigger"]:
-        motivation += "これまで培ったコミュニケーション能力を活かし、一人ひとりと深く関わる福祉の仕事に挑戦したいと考えております。"
-    elif "手に職" in data["trigger"]:
-        motivation += "高齢化社会を支える介護業界で、専門資格を取得しながら長く腰を据えて働きたいと考え、貴法人を志望しました。"
-    elif "ブランク" in data["trigger"]:
-        motivation += "一度現場を離れましたが、やはり利用者様と触れ合う介護の仕事のやりがいが忘れられず、復職を決意いたしました。"
+    st.header("3. 経験した業務")
+    st.write("これまで経験したことがある業務にチェックを入れてください。")
+    st.caption("※未経験の方はチェック不要です")
 
-    # Bパーツ（強み）の接続
-    motivation += "\n\n私の強みは「" + data["strength"].split("（")[0].replace("B-.", "") + "」です。"
-    if "傾聴力" in data["strength"]:
-        motivation += "利用者様の言葉にならない思いや、些細な表情の変化を汲み取ることを常に心がけています。"
-    elif "協調性" in data["strength"]:
-        motivation += "チームケアを重視し、多職種との連携をスムーズに行うための報告・連絡・相談を徹底します。"
-    elif "明るさ" in data["strength"]:
-        motivation += "朝の挨拶や声掛けを大切にし、利用者様や職員が明るくなれる雰囲気作りを行います。"
+    # 要件定義 5.4: 職務経歴書用タスクリスト
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### 身体介護")
+        t_meal = st.checkbox("食事介助（全介助・見守り）")
+        t_bath = st.checkbox("入浴介助（一般・機械浴）")
+        t_excretion = st.checkbox("排泄介助（オムツ・トイレ）")
+        t_transfer = st.checkbox("移乗・移動介助")
+        t_night = st.checkbox("夜勤業務・巡視")
+    
+    with col2:
+        st.markdown("#### 生活・その他")
+        t_dementia = st.checkbox("認知症ケア・BPSD対応")
+        t_rec = st.checkbox("レクリエーション企画運営")
+        t_record = st.checkbox("記録作成（PC・タブレット）")
+        t_drive = st.checkbox("送迎業務・運転")
+        t_terminal = st.checkbox("看取りケア・ターミナル")
 
-    # Cパーツ（貢献・まとめ）
-    motivation += "\n\n"
-    if data["tasks"]["night"]:
-        motivation += "体力には自信があり、夜勤業務も含めて柔軟に対応可能です。"
-    elif data["tasks"]["drive"]:
-        motivation += "送迎業務も安全第一で行い、利用者様の通所をサポートいたします。"
+    if st.button("履歴書を生成する！"):
+        st.session_state.data["tasks"] = {
+            "食事介助": t_meal, "入浴介助": t_bath, "排泄介助": t_excretion,
+            "移乗介助": t_transfer, "夜勤業務": t_night, "認知症ケア": t_dementia,
+            "レク運営": t_rec, "記録業務": t_record, "送迎": t_drive, "看取り": t_terminal
+        }
+        st.session_state.step = 4
+        st.rerun()
+
+# ==========================================
+# STEP 4: 生成結果・出力
+# ==========================================
+elif st.session_state.step == 4:
+    st.header("🎉 完成しました！")
+    d = st.session_state.data
+    
+    # --- 1. 志望動機生成ロジック ---
+    motivation_text = "【志望動機】\n"
+    
+    # きっかけ (A) の文章化
+    trigger_text = d["trigger"].split(". ")[1] # 番号除去
+    if "家族の介護" in trigger_text:
+        motivation_text += "家族の介護を経験し、専門的な知識と技術を身につけて社会の役に立ちたいと強く思い、志望いたしました。"
+    elif "ボランティア" in trigger_text:
+        motivation_text += "以前ボランティア活動に参加した際、利用者様の笑顔に深いやりがいを感じ、これを生涯の仕事にしたいと考えました。"
+    elif "接客業" in trigger_text:
+        motivation_text += "これまで接客業で培ったコミュニケーション能力を活かし、より一人ひとりのお客様と深く関わる仕事がしたいと考え、介護職を志望しました。"
+    elif "手に職" in trigger_text:
+        motivation_text += "高齢化社会を支える不可欠な存在である介護業界で、専門性を磨きながら長く安定して働きたいと考えました。"
+    elif "ブランク" in trigger_text:
+        motivation_text += "一度現場を離れましたが、やはり利用者様と触れ合う介護の仕事のやりがいが忘れられず、復職を決意いたしました。"
     else:
-        motivation += f"貴施設（{data['facility']}）の理念である利用者本位のケアを実践し、一日も早く戦力となれるよう尽力いたします。"
+        motivation_text += f"{trigger_text}と考え、志望いたしました。" # 汎用
 
-    # 職務要約の生成（タスクに基づく）
-    summary = "【職務要約・得意分野】\n"
-    tasks_list = []
-    if data["tasks"]["physical"]: tasks_list.append("・身体介護（入浴・排泄・食事）による自立支援")
-    if data["tasks"]["dementia"]: tasks_list.append("・認知症利用者への受容的・共感的ケアの実践")
-    if data["tasks"]["rec"]: tasks_list.append("・季節行事やレクリエーションの企画・運営")
-    if data["tasks"]["record"]: tasks_list.append("・PC/タブレットを使用した正確な記録業務")
+    # 強み (B) の接続
+    strength_key = d["strength_desc"].split(". ")[1].split("「")[1].split("」")[0]
+    motivation_text += f"\n\n私の強みは「{strength_key}」です。"
     
-    if not tasks_list:
-        summary += "・未経験ですが、研修を通じて基本的な介護技術を積極的に習得します。"
+    if "傾聴" in strength_key:
+        motivation_text += "利用者様の言葉にならない思いや、些細な表情の変化を汲み取ることを常に心がけています。"
+    elif "協調" in strength_key:
+        motivation_text += "チームケアを重視し、他職種との連携をスムーズに行うための報告・連絡・相談を徹底します。"
+    elif "忍耐" in strength_key:
+        motivation_text += "認知症の方の繰り返しの訴えにも、否定せず受容と共感を持って粘り強く対応することができます。"
+    elif "ムードメーカー" in strength_key:
+        motivation_text += "職場のムードメーカーとして、挨拶や声掛けを大切にし、利用者様や職員が明るくなれる雰囲気作りを行います。"
+    elif "責任感" in strength_key:
+        motivation_text += "任された業務を最後までやり遂げることはもちろん、プラスアルファの気配りで利用者様の満足度を高めます。"
+    elif "向上心" in strength_key:
+        motivation_text += "研修や勉強会には積極的に参加し、新しい介護技術や知識を現場に取り入れる努力を惜しみません。"
+
+    # 目標 (C) の接続
+    goal_text = d["goal"].split(". ")[1]
+    motivation_text += f"\n\n入社後は、{goal_text}と考えております。貴施設の理念実現に貢献できるよう尽力いたします。"
+
+    # --- 2. 職務要約生成ロジック ---
+    summary_text = "【職務要約・経験業務】\n"
+    active_tasks = [k for k, v in d["tasks"].items() if v]
+    
+    if not active_tasks:
+        summary_text += "未経験ではありますが、研修を通じて基本的な介護技術を積極的に習得し、早期に戦力となれるよう努力いたします。"
     else:
-        summary += "\n".join(tasks_list)
+        summary_text += "これまでの経験において、以下の業務に従事してまいりました。\n"
+        if "食事介助" in active_tasks: summary_text += "・身体介護：食事・入浴・排泄の三大介助（自立支援を意識したケアの実践）\n"
+        if "夜勤業務" in active_tasks: summary_text += "・夜勤業務：巡視、安否確認、緊急時対応\n"
+        if "認知症ケア" in active_tasks: summary_text += "・認知症対応：BPSDへの対応、受容的コミュニケーション\n"
+        if "レク運営" in active_tasks: summary_text += "・生活支援：レクリエーションの企画・運営、記録作成\n"
+        if "看取り" in active_tasks: summary_text += "・その他：ターミナルケア（看取り）、ご家族への精神的ケア\n"
 
-    # 画面表示
-    st.success("以下の文章をコピーして使ってください")
+    # --- 3. 資格の正式名称変換 (要件定義 4.1) ---
+    qual_text = ""
+    if d["qualifications"] and "なし" not in d["qualifications"]:
+        qual_list = []
+        mapping = {
+            "ヘルパー2級": "介護職員初任者研修 修了（旧ヘルパー2級）",
+            "初任者研修": "介護職員初任者研修 修了",
+            "ヘルパー1級": "介護職員実務者研修 修了（旧ヘルパー1級）",
+            "実務者研修": "介護職員実務者研修 修了",
+            "介護福祉士": "介護福祉士 登録",
+            "社会福祉士": "社会福祉士 登録",
+            "精神保健福祉士": "精神保健福祉士 登録",
+            "ケアマネ": "介護支援専門員（ケアマネジャー）",
+            "普通免許(AT)": "普通自動車第一種運転免許（AT限定）",
+            "認知症ケア専門士": "認知症ケア専門士 認定",
+            "喀痰吸引研修": "喀痰吸引等研修 修了"
+        }
+        for q in d["qualifications"]:
+            qual_list.append(mapping.get(q, q))
+        qual_text = "\n".join(qual_list)
+
+    # --- 出力エリア ---
+    st.success("以下のテキストをコピーして、履歴書に貼り付けてください")
     
-    st.text_area("志望動機", motivation, height=250)
-    st.text_area("職務要約・自己PR", summary, height=150)
+    st.subheader("志望動機")
+    st.text_area("志望動機_copy", motivation_text, height=300)
+    
+    st.subheader("職務の要約")
+    st.text_area("職務要約_copy", summary_text, height=200)
 
-    # 資格の正式名称表示（4.1）
-    if data["qualifications"] and "なし" not in data["qualifications"]:
-        st.info("💡 資格は正式名称で書きましょう：")
-        formal_names = []
-        for q in data["qualifications"]:
-            if "ヘルパー2級" in q: formal_names.append("・介護職員初任者研修 修了（旧ヘルパー2級）")
-            elif "実務者" in q: formal_names.append("・介護福祉士実務者研修 修了")
-            elif "普通自動車" in q: formal_names.append("・普通自動車第一種運転免許（AT限定）")
-            else: formal_names.append(f"・{q} 登録") # 国家資格系
-        st.write("\n".join(formal_names))
+    if qual_text:
+        st.subheader("資格（正式名称）")
+        st.text_area("資格_copy", qual_text, height=150)
 
-    # --- アフィリエイト導線 ---
+    # --- マネタイズ導線 (人材紹介アフィリエイト) ---
     st.markdown("---")
-    st.markdown(f"### 準備ができたら、求人を見てみましょう")
-    st.write("作成した志望動機を使って、好条件の職場を探しませんか？")
-    # ここにアフィリエイトリンク
-    st.markdown("""
+    st.markdown("### 📢 あなたの経験を高く評価する求人があります")
+    
+    # ユーザーの属性に合わせてオファーを変える（要件定義 5.2.3: 動的ターゲティング）
+    affiliate_msg = "好条件の非公開求人を見てみる"
+    if "介護福祉士" in d["qualifications"]:
+        affiliate_msg = "【介護福祉士優遇】月給30万円以上の求人を見る"
+    elif "夜勤業務" in active_tasks:
+        affiliate_msg = "【夜勤専従あり】1回2.5万円〜の高単価夜勤求人を見る"
+    elif "未経験" in str(d["trigger"]):
+        affiliate_msg = "【未経験OK】研修充実・資格取得支援ありの求人を見る"
+
+    st.markdown(f"""
         <a href="#" style="
             display: block;
             width: 100%;
-            padding: 15px;
+            padding: 20px;
             background-color: #FF9800;
             color: white;
             text-align: center;
             text-decoration: none;
             font-weight: bold;
             border-radius: 10px;
-            font-size: 20px;">
-            👉 {facility} の求人を見る（登録無料）
+            font-size: 22px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        ">
+            👉 {affiliate_msg}
         </a>
     """, unsafe_allow_html=True)
-    
+    st.caption("※登録は無料です。あなたの市場価値を確かめてみましょう。")
+
     if st.button("最初からやり直す"):
         st.session_state.step = 1
         st.rerun()
