@@ -1,4 +1,5 @@
 import streamlit as st
+import time 
 
 # ページ設定
 st.set_page_config(page_title="支援記録生成くん", layout="centered")
@@ -127,17 +128,27 @@ def generate_full_text(name, mode, c_k, w_k, m_k, free):
 # --- 出力エリア ---
 st.divider()
 
+# ボタンを押したときの処理
 if st.button("記録を生成する", type="primary"):
     if not user_name:
-        user_name = "利用者"
-    
-    result = generate_full_text(user_name, mode_key, c_key, w_key, m_key, free_comment)
-    
-    st.success("生成完了！")
-    st.text_area("コピー用テキスト", result, height=250)
-    
-    st.info("💡 修正ヒント：生成された文章をベースに、具体的な「作業名」や「時間」を書き足すと、より質の高い記録になります。")
+        st.warning("⚠️ 利用者名を入力してください")
+    else:
+        # ①「考え中」のアニメーション（ここが動きのポイント！）
+        with st.spinner('AIが最適な文章を構成しています...'):
+            time.sleep(1.5) # 1.5秒間わざと待たせる（演出）
+            result = generate_full_text(user_name, mode_key, c_key, w_key, m_key, free_comment)
+        
+        # ②「完成！」のアニメーション
+        st.balloons() # 風船が飛びます！
+        # st.snow()   # 雪を降らせたい場合はこちらを使う
+        
+        st.success("生成完了！以下のテキストをコピーして使ってください。")
+        st.text_area("コピー用テキスト", result, height=250)
+        
+        st.toast('記録を生成しました！', icon='🎉') # 右下に通知が出ます
 
-    # アフィリエイトリンク（例）
-    st.markdown("---")
-    st.markdown("[👉 サービス管理責任者のための求人特集を見る](#)")
+        st.info("💡 修正ヒント：生成された文章をベースに、具体的な「作業名」や「時間」を書き足すと、より質の高い記録になります。")
+
+        # アフィリエイトリンク
+        st.markdown("---")
+        st.markdown("[👉 サービス管理責任者のための求人特集を見る](#)")
