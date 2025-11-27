@@ -4,7 +4,7 @@ from datetime import date
 # ページ設定
 st.set_page_config(page_title="福祉職の履歴書メーカー", layout="centered")
 
-st.title("📄 福祉職のための履歴書メーカー")
+st.title("福祉職のための履歴書メーカー")
 st.caption("面倒な入力は不要。タグを選ぶだけで、プロのような職務経歴書が完成します。")
 
 # --- セッション状態の初期化 ---
