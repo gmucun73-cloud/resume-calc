@@ -46,7 +46,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📄 履歴書・職務経歴書メーカー")
+st.title("履歴書・職務経歴書メーカー")
 st.markdown("**質問に答えるだけで、あなたの経験を「採用される文章」に変換します。**")
 
 # セッション管理（ステップ進行）
