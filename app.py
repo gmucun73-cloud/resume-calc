@@ -17,7 +17,7 @@ def get_wareki(year):
         return f"西暦{year}年"
 
 # タイトル
-st.title("📄 履歴書・入学卒業年度 自動計算機")
+st.title("履歴書・入学卒業年度 自動計算機")
 st.write("生年月日を入力するだけで、小学校から大学までの入学・卒業年度を自動計算します。")
 
 # 入力フォーム
@@ -32,7 +32,7 @@ if birthday.month <= 3 or (birthday.month == 4 and birthday.day == 1):
 # 計算ボタン
 if st.button("計算する"):
     st.divider()
-    st.subheader("📊 計算結果")
+    st.subheader("計算結果")
     
     # 学歴データの作成
     data = [
